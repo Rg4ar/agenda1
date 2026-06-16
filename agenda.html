@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda de Contactos</title>
+<style>
+  :root{
+    --ink:#2b2420;
+    --paper:#f6f1e7;
+    --rule:#d8cdb8;
+    --rust:#b5502f;
+    --rust-dark:#8c3c22;
+    --olive:#5d6b4f;
+    --card:#fffdf8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+  }
+  header{
+    border-bottom:3px solid var(--ink);
+    padding-bottom:18px;
+    margin-bottom:32px;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  header h1{
+    font-size:2.1rem;
+    letter-spacing:0.5px;
+    margin:0;
+    font-weight:700;
+  }
+  header .tag{
+    font-family:'Courier New', monospace;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    color:var(--rust-dark);
+  }
+  .panel{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:24px;
+    margin-bottom:36px;
+    box-shadow:0 1px 0 var(--rule);
+  }
+  .panel h2{
+    font-family:'Courier New', monospace;
+    font-size:0.8rem;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    color:var(--olive);
+    margin:0 0 18px;
+  }
+  form{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px 16px;
+  }
+  form .full{grid-column:1 / -1;}
+  label{
+    display:block;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:#7a7060;
+    margin-bottom:5px;
+  }
+  input[type=text], input[type=tel]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--rule);
+    background:#fffefb;
+    font-family:inherit;
+    font-size:1rem;
+    color:var(--ink);
+    border-radius:2px;
+  }
+  input:focus{
+    outline:2px solid var(--rust);
+    outline-offset:1px;
+  }
+  button{
+    grid-column:1/-1;
+    background:var(--rust);
+    color:#fff8ee;
+    border:none;
+    padding:12px 20px;
+    font-family:inherit;
+    font-size:1rem;
+    font-weight:600;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    border-radius:2px;
+    transition:background 0.15s ease;
+  }
+  button:hover{background:var(--rust-dark);}
+  button:disabled{background:#c9bda4; cursor:wait;}
+  .status{
+    grid-column:1/-1;
+    font-size:0.85rem;
+    min-height:1.2em;
+  }
+  .status.ok{color:var(--olive);}
+  .status.err{color:var(--rust-dark);}
+
+  .list-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:14px;
+  }
+  .count{
+    font-family:'Courier New', monospace;
+    font-size:0.75rem;
+    color:#7a7060;
+  }
+  .search{
+    width:100%;
+    padding:9px 12px;
+    border:1px solid var(--rule);
+    background:#fffefb;
+    font-family:inherit;
+    font-size:0.95rem;
+    margin-bottom:16px;
+    border-radius:2px;
+  }
+  ul.contacts{
+    list-style:none;
+    margin:0;
+    padding:0;
+    border-top:1px solid var(--rule);
+  }
+  ul.contacts li{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:13px 4px;
+    border-bottom:1px solid var(--rule);
+  }
+  ul.contacts li .name{
+    font-weight:600;
+  }
+  ul.contacts li .phone{
+    font-family:'Courier New', monospace;
+    font-size:0.9rem;
+    color:var(--rust-dark);
+    white-space:nowrap;
+    margin-left:16px;
+  }
+  .empty, .loading{
+    padding:30px 4px;
+    text-align:center;
+    color:#7a7060;
+    font-style:italic;
+  }
+  footer{
+    text-align:center;
+    font-size:0.75rem;
+    color:#9a8f78;
+    margin-top:40px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Mi Agenda</h1>
+    <span class="tag">Contactos</span>
+  </header>
+
+  <section class="panel">
+    <h2>Agregar contacto</h2>
+    <form id="contact-form">
+      <div>
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" required>
+      </div>
+      <div>
+        <label for="apellido">Apellido</label>
+        <input type="text" id="apellido" name="apellido" required>
+      </div>
+      <div class="full">
+        <label for="telefono">Teléfono</label>
+        <input type="tel" id="telefono" name="telefono" required>
+      </div>
+      <button type="submit" id="submit-btn">Guardar contacto</button>
+      <div class="status" id="form-status"></div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="list-head">
+      <h2 style="margin:0;">Contactos guardados</h2>
+      <span class="count" id="count"></span>
+    </div>
+    <input type="text" class="search" id="search" placeholder="Buscar por nombre, apellido o teléfono...">
+    <div id="list-container">
+      <div class="loading">Cargando contactos...</div>
+    </div>
+  </section>
+
+  <footer>Agenda conectada a www.raydelto.org/agenda.php</footer>
+</div>
+
+<script>
+const API_URL = 'http://www.raydelto.org/agenda.php';
+let contactos = [];
+
+async function cargarContactos(){
+  const container = document.getElementById('list-container');
+  container.innerHTML = '<div class="loading">Cargando contactos...</div>';
+  try{
+    const resp = await fetch(API_URL);
+    if(!resp.ok) throw new Error('Error al obtener los datos');
+    const data = await resp.json();
+    contactos = Array.isArray(data) ? data : [];
+    renderLista(contactos);
+  }catch(err){
+    container.innerHTML = '<div class="empty">No se pudo cargar la agenda. ' + err.message + '</div>';
+  }
+}
+
+function renderLista(items){
+  const container = document.getElementById('list-container');
+  const count = document.getElementById('count');
+  count.textContent = items.length + ' contacto' + (items.length === 1 ? '' : 's');
+
+  if(items.length === 0){
+    container.innerHTML = '<div class="empty">No hay contactos que coincidan.</div>';
+    return;
+  }
+
+  const ul = document.createElement('ul');
+  ul.className = 'contacts';
+  items.forEach(c => {
+    const li = document.createElement('li');
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = ((c.nombre || '') + ' ' + (c.apellido || '')).trim() || '(sin nombre)';
+    const phone = document.createElement('span');
+    phone.className = 'phone';
+    phone.textContent = c.telefono || '—';
+    li.appendChild(name);
+    li.appendChild(phone);
+    ul.appendChild(li);
+  });
+  container.innerHTML = '';
+  container.appendChild(ul);
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const term = e.target.value.toLowerCase().trim();
+  if(!term){ renderLista(contactos); return; }
+  const filtrados = contactos.filter(c =>
+    (c.nombre || '').toLowerCase().includes(term) ||
+    (c.apellido || '').toLowerCase().includes(term) ||
+    (c.telefono || '').toLowerCase().includes(term)
+  );
+  renderLista(filtrados);
+});
+
+document.getElementById('contact-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const status = document.getElementById('form-status');
+  const nombre = document.getElementById('nombre').value.trim();
+  const apellido = document.getElementById('apellido').value.trim();
+  const telefono = document.getElementById('telefono').value.trim();
+
+  btn.disabled = true;
+  status.className = 'status';
+  status.textContent = 'Guardando...';
+
+  try{
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, apellido, telefono })
+    });
+    if(!resp.ok) throw new Error('El servidor respondió con error');
+
+    status.className = 'status ok';
+    status.textContent = 'Contacto guardado correctamente.';
+    document.getElementById('contact-form').reset();
+    await cargarContactos();
+  }catch(err){
+    status.className = 'status err';
+    status.textContent = 'No se pudo guardar: ' + err.message;
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+cargarContactos();
+</script>
+</body>
+</html>
